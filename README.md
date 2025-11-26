@@ -1,0 +1,2 @@
+# Easy Generator Task
+
