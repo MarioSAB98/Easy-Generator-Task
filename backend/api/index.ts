@@ -35,7 +35,11 @@ async function createApp() {
         console.warn('WARNING: FRONTEND_URL is not set. CORS will block requests.');
     }
 
-    nestApp.enableCors();
+    nestApp.enableCors({
+        origin: "*",
+        methods: "GET,POST,PUT,DELETE,OPTIONS",
+        credentials: true,
+    });
 
     nestApp.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
