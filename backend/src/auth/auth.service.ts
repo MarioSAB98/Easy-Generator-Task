@@ -79,7 +79,7 @@ export class AuthService {
     res.cookie('token', accessToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'strict',
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 3600000
     });
   }
