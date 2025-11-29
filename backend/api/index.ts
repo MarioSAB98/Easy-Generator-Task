@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
+import { rateLimit } from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 
 import { ValidationPipe } from '@nestjs/common';
@@ -27,6 +28,7 @@ async function createApp() {
         },
     );
 
+    // Trust proxy - required for Vercel
     expressApp.set('trust proxy', 1);
 
     nestApp.use(cookieParser());
@@ -35,12 +37,27 @@ async function createApp() {
         console.warn('WARNING: FRONTEND_URL is not set. CORS will block requests.');
     }
 
+    // CORS configuration
     nestApp.enableCors({
         origin: process.env.FRONTEND_URL,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
     });
+
+    // Rate limiting configured for serverless/proxy environment
+    nestApp.use(
+        rateLimit({
+            windowMs: 60 * 1000,
+            max: 100,
+            standardHeaders: true,
+            legacyHeaders: false,
+            // Use X-Forwarded-For header from Vercel proxy
+            keyGenerator: (req) => {
+                return req.headers['x-forwarded-for'] as string || req.ip || 'unknown';
+            },
+        }),
+    );
 
     nestApp.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
@@ -56,7 +73,6 @@ async function createApp() {
     cachedApp = nestApp;
     return nestApp;
 }
-
 
 export default async (req, res) => {
     await createApp();
